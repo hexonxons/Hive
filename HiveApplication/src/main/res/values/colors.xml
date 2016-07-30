@@ -1,6 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="white">#FFF</color>
+    <color name="nothing">#000</color>
+    <color name="despair">#212121</color>
+    <color name="ash">#999999</color>
+    <color name="cinder">#ADADAD</color>
+    <color name="dust">#F4F4F4</color>
+    <color name="link">#2EAED4</color>
+    <color name="link_dark">#88DDF6</color>
+    <color name="colony">#EE2545</color>
+    <color name="amnesty">#9C48D5</color>
+    <color name="sulfur">#FFDE00</color>
+    <color name="chlorine">#EFDB57</color>
+    <color name="fluorine">#FCEB8B</color>
+    <color name="phosphorus">#F9F2CE</color>
+    <color name="suitable">#42B34E</color>
+    <color name="waste">#B04B4B</color>
+    <color name="random">#8C9FAD</color>
+    <color name="suitable_orthodox">#5DCA2D</color>
+    <color name="waste_orthodox">#ED7558</color>
+    <color name="random_orthodox">#1E95D8</color>
+
+
+    <color name="chlorine_60">#4CEFDB57</color>
 </resources>
