@@ -1,0 +1,25 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.1.2'
+        classpath 'me.tatarka.retrolambda.projectlombok:lombok.ast:0.2.3.a2'
+    }
+}
+
+plugins {
+    id "me.tatarka.retrolambda" version "3.2.5"
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+    // Set all-projects build dir location.
+    buildDir = System.getProperty("user.dir") + File.separator + "build" + File.separator + project.name
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

@@ -1,0 +1,105 @@
+apply plugin: 'com.android.application'
+apply plugin: 'me.tatarka.retrolambda'
+
+android {
+    compileSdkVersion 24
+    buildToolsVersion "24.0.1"
+
+    // Project directory.
+    def gradleWorkDirectory = System.getProperty("user.dir")
+
+    // Version properties file.
+    def versionPropertiesFile = file(gradleWorkDirectory + File.separator + "version.properties")
+    if (!versionPropertiesFile.canRead()) {
+        throw new GradleException("Could not read version.properties file.")
+    }
+    // Keystore config file.
+    def keystoreConfigFile = file(gradleWorkDirectory + File.separator + "keystore.properties")
+    if (!keystoreConfigFile.canRead()) {
+        throw new GradleException("Could not read keystore.properties file.")
+    }
+
+    // Create properties object.
+    def Properties keystoreProperties = new Properties()
+    // Read properties from file.
+    keystoreProperties.load(new FileInputStream(keystoreConfigFile))
+
+    // App signing data.
+    signingConfigs {
+        release {
+            storeFile file(gradleWorkDirectory + File.separator + keystoreProperties["STORE_RELATIVE_PATH"])
+            storePassword keystoreProperties["STORE_PASSWORD"]
+            keyAlias keystoreProperties["KEY_ALIAS"]
+            keyPassword keystoreProperties["KEY_PASSWORD"]
+        }
+    }
+
+    // Create properties object.
+    def Properties versionProperties = new Properties()
+    // Read properties from file.
+    versionProperties.load(new FileInputStream(versionPropertiesFile))
+
+    // Read codes from properties object.
+    def versionRelease = versionProperties["VERSION_RELEASE"].toInteger()
+    def versionMajor = versionProperties["VERSION_MAJOR"].toInteger()
+    def versionMinor = versionProperties["VERSION_MINOR"].toInteger()
+    def versionBuild = versionProperties["VERSION_BUILD"].toInteger() + 1
+
+    // Update build number.
+    versionProperties["VERSION_BUILD"] = versionBuild.toString()
+    // Save properties to file.
+    versionProperties.store(versionPropertiesFile.newWriter(), null)
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 24
+
+        applicationId "com.hexonxons.hive"
+        versionName versionRelease + "." + versionMajor + "." + versionMinor + "." + versionBuild;
+        versionCode versionBuild
+
+        // Set app name.
+        resValue "string", "app_name", "HiveTest"
+    }
+
+    dexOptions {
+        javaMaxHeapSize "4G" // Welcome to java sucker.
+        maxProcessCount = 4 // Max dex process count. Gradle 2.+ feature.
+    }
+
+    // Exclude some files from external libs.
+    packagingOptions {
+        exclude "META-INF/LICENSE"
+        exclude "META-INF/NOTICE"
+    }
+
+    // Different build types config.
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    // Iterate over app variants.
+    applicationVariants.all { variant ->
+        if (variant.buildType.name == "debug") {
+            resValue "string", "app_name", "HiveTest" + ":" + variant.buildType.name
+
+            variant.mergedFlavor.applicationId += "." + variant.buildType.name
+            variant.mergedFlavor.versionName += "." + variant.buildType.name
+        }
+    }
+}
+
+dependencies {
+    // Android support libraries.
+    compile 'com.android.support:appcompat-v7:24.1.1'
+    // Roboto textview library.
+    compile 'com.github.johnkil.android-robototextview:robototextview:2.5.0@aar'
+}

@@ -1,0 +1,27 @@
+# Gradle config files.
+.gradle
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Idea files.
+.idea/
+*.iml
+
+# Windows thumbnail db
+Thumbs.db
+
+# Mac cache.
+.DS_Store
+
+# Build data.
+**/build/
+build
+
+# External temp/bin files
+*/tmp/
+*/temp/
+*.zip
+*.apk
+*.dex
+*.class
