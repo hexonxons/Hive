@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'me.tatarka.retrolambda'
 
 android {
-    compileSdkVersion 24
+    compileSdkVersion 23
     buildToolsVersion "24.0.1"
 
     // Project directory.
@@ -52,7 +52,7 @@ android {
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 24
+        targetSdkVersion 23
 
         applicationId "com.hexonxons.hive"
         versionName versionRelease + "." + versionMajor + "." + versionMinor + "." + versionBuild;
@@ -103,4 +103,6 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:24.1.1'
     // Roboto textview library.
     compile 'com.github.johnkil.android-robototextview:robototextview:2.5.0@aar'
+    // Progress view library.
+    compile 'com.pnikosis:materialish-progress:1.7'
 }

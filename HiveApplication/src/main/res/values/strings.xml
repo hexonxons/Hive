@@ -1,3 +1,7 @@
 <resources>
+    <!-- Setup activity strings -->
+    <string name="setup_wait">Погодь…\n</string>
+
+    <!-- Main activity strings -->
     <string name="message">Текст сообщения</string>
 </resources>

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.hexonxons.hive.data.ChatMessage;
 
@@ -47,7 +48,7 @@ public final class DbManager {
     public ChatMessage[] getMessages() {
         Cursor cursor = mDatabase.query(DbOpenHelper.MESSAGE._TABLE_NAME, null, null, null, null, null, null);
 
-        if (cursor.getColumnIndex(DbOpenHelper.MESSAGE._ID) == -1 || cursor.isAfterLast()) {
+        if (cursor.isAfterLast()) {
             cursor.close();
             return EMPTY_MESSAGES;
         }
@@ -59,5 +60,48 @@ public final class DbManager {
         cursor.close();
 
         return messages;
+    }
+
+    @NonNull
+    public ChatMessage[] getMessages(long minId) {
+        Cursor cursor = mDatabase.query(DbOpenHelper.MESSAGE._TABLE_NAME, null,
+                DbOpenHelper.MESSAGE._ID + " > ?", new String[] {Long.toString(minId)}, null, null, null);
+
+        if (cursor.isAfterLast()) {
+            cursor.close();
+            return EMPTY_MESSAGES;
+        }
+
+        ChatMessage[] messages = new ChatMessage[cursor.getCount()];
+        for (int i = 0; cursor.moveToNext(); ++i) {
+            messages[i] = ChatMessage.create(cursor);
+        }
+        cursor.close();
+
+        return messages;
+    }
+
+    /***********************************************
+     * Bot message methods.                        *
+     ***********************************************/
+    public void insertBotMessage(@NonNull ChatMessage message) {
+        mDatabase.insert(DbOpenHelper.BOT_MESSAGE._TABLE_NAME, null, message.toContentValues());
+    }
+
+    @Nullable
+    public ChatMessage getBotMessage(int index) {
+        Cursor cursor = mDatabase.query(DbOpenHelper.BOT_MESSAGE._TABLE_NAME, null,
+                DbOpenHelper.BOT_MESSAGE._ID + " = ?", new String[] {Integer.toString(index)}, null, null, null);
+
+        if (cursor.isAfterLast()) {
+            cursor.close();
+            return null;
+        }
+        cursor.moveToNext();
+
+        ChatMessage message = ChatMessage.create(cursor);
+        cursor.close();
+
+        return message;
     }
 }
