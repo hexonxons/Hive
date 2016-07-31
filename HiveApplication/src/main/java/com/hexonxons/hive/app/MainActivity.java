@@ -19,6 +19,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.widget.TextView;
 
@@ -117,6 +118,11 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.send).setOnClickListener(view -> {
             // Create chat message.
             ChatMessage message = ChatMessage.create(true, mMessageView.getText().toString());
+
+            if (TextUtils.isEmpty(message.message)) {
+                return;
+            }
+
             // Add message to database.
             mDbManager.insertMessage(message);
             // Add message to chat list.
@@ -176,6 +182,10 @@ public class MainActivity extends AppCompatActivity {
     private void setupLocationUpdates() {
         // Get location manager instance.
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (!locationManager.getAllProviders().contains(LocationManager.NETWORK_PROVIDER)) {
+            return;
+        }
+
         Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         if (location == null) {
             locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, mLocationListener, null);
