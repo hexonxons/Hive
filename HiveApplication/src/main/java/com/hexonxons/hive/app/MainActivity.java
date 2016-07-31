@@ -49,8 +49,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onLocationChanged(Location location) {
             mIsLocationSent = true;
-            mAdapter.addMessages(ChatMessage.create(true,
-                    location.getLatitude() + " " + location.getLongitude()));
+            ChatMessage message = ChatMessage.create(true, location.getLatitude() + " " + location.getLongitude());
+            mDbManager.insertMessage(message);
+            mAdapter.addMessages(message);
         }
 
         @Override
@@ -198,6 +199,7 @@ public class MainActivity extends AppCompatActivity {
                         })
                         .setNegativeButton("Cancel", (d, id) -> {
                             d.cancel();
+                            mIsLocationSent = true;
                         });
                 builder.create().show();
             }
