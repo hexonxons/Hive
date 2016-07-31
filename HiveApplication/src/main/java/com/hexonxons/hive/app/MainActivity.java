@@ -1,31 +1,38 @@
 package com.hexonxons.hive.app;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.hexonxons.hive.Constants;
 import com.hexonxons.hive.R;
 import com.hexonxons.hive.data.ChatMessage;
 import com.hexonxons.hive.database.DbManager;
+import com.hexonxons.hive.widget.ChatAdapter;
 import com.hexonxons.hive.widget.SpacesItemDecorator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public class MainActivity extends AppCompatActivity {
+    private static final int LOCATION_REQUEST_CODE = 0x0000DEAD;
+    private static final String TAG_LOCATION_SENT = "TAG_LOCATION_SENT";
+
     // Chat recycler.
     private RecyclerView mRecyclerView = null;
     // Chat adapter.
@@ -34,6 +41,29 @@ public class MainActivity extends AppCompatActivity {
     private TextView mMessageView = null;
     // Db manager.
     private DbManager mDbManager = null;
+    // Location sent flag.
+    private boolean mIsLocationSent = false;
+    // Location listener.
+    private LocationListener mLocationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            mIsLocationSent = true;
+            mAdapter.addMessages(ChatMessage.create(true,
+                    location.getLatitude() + " " + location.getLongitude()));
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+        }
+    };
 
     // Message receiver.
     private BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -58,6 +88,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            mIsLocationSent = savedInstanceState.getBoolean(TAG_LOCATION_SENT);
+        }
+
         setContentView(R.layout.activity_main);
 
         // Get database manager.
@@ -91,6 +126,16 @@ public class MainActivity extends AppCompatActivity {
             // Scroll to last position.
             mRecyclerView.smoothScrollToPosition(mAdapter.getItemCount());
         });
+
+        if (!mIsLocationSent) {
+            int locationPermission = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+            if (locationPermission == PackageManager.PERMISSION_GRANTED) {
+                setupLocationUpdates();
+            } else {
+                ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION},
+                        LOCATION_REQUEST_CODE);
+            }
+        }
     }
 
     @Override
@@ -116,68 +161,51 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(TAG_LOCATION_SENT, mIsLocationSent);
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         LocalBroadcastManager.getInstance(this)
                 .unregisterReceiver(mReceiver);
     }
 
-    private static class ChatAdapter extends RecyclerView.Adapter<ChatViewHolder> {
-        private static final int VIEW_TYPE_ME = 0;
-        private static final int VIEW_TYPE_OPPONENT = 1;
-
-        // Layout inflater.
-        private final LayoutInflater mInflater;
-        // Messages array.
-        private final List<ChatMessage> mMessages = new ArrayList<>();
-
-        public ChatAdapter(LayoutInflater inflater) {
-            mInflater = inflater;
-        }
-
-        @Override
-        public ChatViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            switch (viewType) {
-                case VIEW_TYPE_ME: {
-                    return new ChatViewHolder(mInflater.inflate(R.layout.chat_item_me, parent, false));
-                }
-                case VIEW_TYPE_OPPONENT: {
-                    return new ChatViewHolder(mInflater.inflate(R.layout.chat_item_opponent, parent, false));
-                }
-                default: {
-                    throw new RuntimeException("Unknown view type: " + viewType);
-                }
+    private void setupLocationUpdates() {
+        // Get location manager instance.
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if (location == null) {
+            locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, mLocationListener, null);
+            if (!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage("Please, turn on ur gps.")
+                        .setPositiveButton("OK", (d, id) -> {
+                            startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                            d.dismiss();
+                        })
+                        .setNegativeButton("Cancel", (d, id) -> {
+                            d.cancel();
+                        });
+                builder.create().show();
             }
-        }
-
-        @Override
-        public void onBindViewHolder(ChatViewHolder holder, int position) {
-            holder.message.setText(mMessages.get(position).message);
-        }
-
-        @Override
-        public int getItemCount() {
-            return mMessages.size();
-        }
-
-        @Override
-        public int getItemViewType(int position) {
-            return mMessages.get(position).isUserMe ? VIEW_TYPE_ME : VIEW_TYPE_OPPONENT;
-        }
-
-        public void addMessages(ChatMessage... messages) {
-            int itemCount = mMessages.size();
-            mMessages.addAll(Arrays.asList(messages));
-            notifyItemRangeInserted(itemCount, messages.length);
+        } else {
+            mIsLocationSent = true;
+            mDbManager.insertMessage(ChatMessage.create(true, location.getLatitude() + " " + location.getLongitude()));
         }
     }
 
-    private static class ChatViewHolder extends RecyclerView.ViewHolder {
-        public TextView message = null;
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+            @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        public ChatViewHolder(View itemView) {
-            super(itemView);
-            message = (TextView) itemView.findViewById(R.id.chat_message);
+        if (requestCode == LOCATION_REQUEST_CODE) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                setupLocationUpdates();
+            }
         }
     }
 }
